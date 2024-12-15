@@ -72,10 +72,15 @@ def check_clickjacking(url):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     result = None
+    url = None
     if request.method == 'POST':
         url = request.form.get('url')
         result = check_clickjacking(url)
-    return render_template('index.html', result=result)
+    return render_template('index.html', result=result, url=url)
+
+@app.route('/test', methods=['GET'])
+def test_page():
+    return render_template('main.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
