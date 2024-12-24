@@ -1,19 +1,25 @@
 <!doctype html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ClickJackingTest</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-  </head>
-  <body>
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
     <div class="container">
-
         <div class="header">
             <p class="fs-2 text-center mt-5">Clickjacking Vulnerability Checker</p>
         </div>
-
         <form method="POST">
             <label for="url">Enter Website URL:</label>
             <div class="row mt-2">
@@ -21,34 +27,38 @@
                     <input type="url" id="url" name="url" required placeholder="https://example.com" class="form-control">
                 </div>
                 <div class="col col-lg-2">
-                    <button type="submit" class="btn btn-success mx-0 ">Check Vulnerability</button>
+                    <button type="submit" class="btn btn-success mx-0">Check Vulnerability</button>
                 </div>
             </div>
         </form>
 
         {% if result %}
         <div class="row justify-content-center mt-3">
-
+            <!-- First column: iframe -->
             <div class="col col-lg-6">
                 <div class="ratio ratio-1x1">
-                    <iframe src="{{ url }}" class="" id="iframe"></iframe>
+                    <iframe src="{{ url|escape }}" class="" id="iframe" sandbox="allow-same-origin"></iframe>
                 </div>
             </div>
-            <div class="col col-lg-5 {{ 'text-danger' if result.vulnerable else 'text-success' }}">
+            
+            <!-- Second column: Results -->
+            <div class="col col-lg-6">
                 <hr>
-                <h2>{{ 'Vulnerable to Clickjacking' if result.vulnerable else 'Protected Against Clickjacking' }} 
+                <!-- Vulnerability Status -->
+                <h2 class="{{ 'text-danger' if result.vulnerable else 'text-success' }}">
+                    {{ 'Vulnerable to Clickjacking' if result.vulnerable else 'Protected Against Clickjacking' }}
                     {% if result.vulnerable %}
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-circle-fill" viewBox="0 0 16 16">
                         <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4m.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2"/>
                     </svg>
                     {% else %}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill " viewBox="0 0 16 16">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16">
                         <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
                     </svg>
                     {% endif %}
                 </h2>
-                <p class="mt-4"><span class="fw-bold">Reason : </span>{{ result.reason }}</p>
-                <p class="mt-2">Header Details : </p>
+
+                <!-- Reason -->
                 <table class="table ">
                     <tbody>
                       <tr>
@@ -56,15 +66,26 @@
                         <td class="{{ 'text-danger' if result.vulnerable else 'text-success' }}">{{ result.details.get('X-Frame-Options', 'Not Set') }}</td>
                       </tr>
                       <tr>
-                        <td class="{{ 'text-danger' if result.vulnerable else 'text-success' }}">X-Frame-Options :</td>
+                        <td class="{{ 'text-danger' if result.vulnerable else 'text-success' }}">Content-Security-Policy :</td>
                         <td class="{{ 'text-danger' if result.vulnerable else 'text-success' }}">{{ result.details.get('Content-Security-Policy', 'Not Set') }}</td>
                       </tr>
                     </tbody>
                 </table>
+                <p class="mt-4"><span class="fw-bold">Reason: </span>{{ result.reason }}</p>
+
+                <!-- Raw Headers -->
+                <div class="mt-4">
+                    <p class="fw-bold">Raw HTTP Headers:</p>
+                    {% if result.raw_headers_pretty %}
+                    <pre>{{ result.raw_headers_pretty }}</pre>
+                    {% else %}
+                    <p class="text-muted">No headers available</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
+        {% endif %}
     </div>
-    {% endif %}
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-  </body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>

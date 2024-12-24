@@ -1,14 +1,11 @@
 import requests
 from flask import Flask, render_template, request, jsonify
 from urllib.parse import urlparse
+import json
 
 app = Flask(__name__)
 
 def check_clickjacking(url):
-    """
-    Check a website for clickjacking vulnerabilities
-    by examining X-Frame-Options and Content-Security-Policy headers
-    """
     try:
         # Validate URL
         parsed_url = urlparse(url)
@@ -16,11 +13,17 @@ def check_clickjacking(url):
             return {
                 'vulnerable': True, 
                 'reason': 'Invalid URL format',
-                'details': {}
+                'details': {},
+                'raw_headers': None,
+                'raw_headers_pretty': None
             }
 
         # Send HEAD request to check headers
         response = requests.head(url, timeout=10)
+        
+        # Get raw headers and format them
+        raw_headers = dict(response.headers)
+        raw_headers_pretty = json.dumps(dict(response.headers), indent=2)
         
         # Check X-Frame-Options header
         x_frame_options = response.headers.get('X-Frame-Options', '').upper()
@@ -28,8 +31,8 @@ def check_clickjacking(url):
         # Check Content-Security-Policy header
         csp = response.headers.get('Content-Security-Policy', '')
         
-        # Determine vulnerability
-        is_vulnerable = True
+        # Initialize variables
+        is_vulnerable = True  # Default to vulnerable
         reasons = []
 
         # X-Frame-Options checks
@@ -59,14 +62,18 @@ def check_clickjacking(url):
             'details': {
                 'X-Frame-Options': x_frame_options or 'Not Set',
                 'Content-Security-Policy': csp or 'Not Set'
-            }
+            },
+            'raw_headers': raw_headers,
+            'raw_headers_pretty': raw_headers_pretty
         }
 
     except requests.RequestException as e:
         return {
             'vulnerable': True, 
             'reason': f'Request failed: {str(e)}',
-            'details': {}
+            'details': {},
+            'raw_headers': None,
+            'raw_headers_pretty': None
         }
 
 @app.route('/', methods=['GET', 'POST'])
@@ -77,10 +84,6 @@ def index():
         url = request.form.get('url')
         result = check_clickjacking(url)
     return render_template('index.html', result=result, url=url)
-
-@app.route('/test', methods=['GET'])
-def test_page():
-    return render_template('main.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
